@@ -132,9 +132,37 @@ audio {
 
 .audio-wrapper p {
   font-size: 18px;
+  margin-right: 20px;
   color: #040404;
 }
 
 .audio-wrapper i {
   cursor: pointer;
+  margin: 20px;
+}
+
+.audio-wrapper i:hover {
+  transform: scale(1.2);
+  -moz-transform: scale(1.2);
+  -webkit-transform: scale(1.2);
+}
+
+.audio-wrapper .active {
+  color: rebeccapurple;
+  transform: scale(1.2);
+  -moz-transform: scale(1.2);
+  -webkit-transform: scale(1.2);
+}
+
+.Queuediv button {
+  width: 125px;
+  align-self: center;
+  cursor: pointer;
+}
+
+.cover-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  margin: 20px;
 }

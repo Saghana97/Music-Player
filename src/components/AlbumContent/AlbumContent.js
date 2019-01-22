@@ -23,7 +23,12 @@ class AlbumContent extends Component {
       artist_name: "",
       song: "",
       play: false,
-      queue: []
+      queue: [],
+      editSong: false,
+      editIndex: "",
+      prevSongName: "",
+      prevArtistName: "",
+      prevSong: ""
     };
   }
   //function to add the songs
@@ -34,6 +39,12 @@ class AlbumContent extends Component {
   handleClose = () => {
     this.setState({ modalOpen: false });
   };
+
+  //function to close edit modal
+  editClose = () => {
+    this.setState({ editSong: false });
+  };
+
   //function to set the song name with a value
   getName = e => {
     this.setState({ song_name: e.target.value });
@@ -49,14 +60,24 @@ class AlbumContent extends Component {
       this.setState({ song: base64 });
     });
   };
+
   //function to delete the song
   deleteSong = (index, e) => {
     e.preventDefault();
     e.stopPropagation();
     this.props.songs.splice(index, 1);
-    this.setState({modalOpen:true});
-    this.setState({modalOpen:false});
+    this.setState({ modalOpen: true });
+    this.setState({ modalOpen: false });
   };
+
+  //function to edit song
+  editSong = (e, index) => {
+    e.stopPropagation();
+    e.preventDefault();
+    this.setState({ editIndex: index });
+    this.setState({ editSong: true });
+  };
+
   //function to play the song
   playSong = e => {
     e.stopPropagation();
@@ -70,19 +91,75 @@ class AlbumContent extends Component {
   //add the song name,artist and song to data
   addToData = () => {
     const { song_name, artist_name, song } = this.state;
-    if(this.state.song_name.length !=0 && this.state.artist_name!=0){
     this.props.songs.push({
       song_name: song_name,
       artist_name: artist_name,
       song: song
     });
-    this.setState({song_name:"",artist_name:""});
+    this.setState({ song_name: "", artist_name: "", song: "" });
     this.setState({ modalOpen: false });
-    }
-    else{
-      alert("Not valid");
-    }
   };
+
+  //saving the edited data
+  editComplete = e => {
+    const { song_name, artist_name, song, editIndex } = this.state;
+    console.log(
+      this.props.queue,
+      this.props.queueSongName,
+      this.props.artistName,
+      "queue emptyy?"
+    );
+
+    let prevSongName = this.props.songs[editIndex].song_name;
+    let prevSong = this.props.songs[editIndex].song;
+    let prevArtistName = this.props.songs[editIndex].artist_name;
+
+    // this.setState({
+    //   prevSongName: this.props.songs[editIndex].song_name,
+    //   prevSong: this.props.songs[editIndex].song,
+    //   prevArtistName: this.props.songs[editIndex].artist_name
+    // });
+
+    if (song_name) this.props.songs[editIndex].song_name = song_name;
+    if (artist_name) this.props.songs[editIndex].artist_name = artist_name;
+    if (this.song) this.props.songs[editIndex].song = song;
+
+    // var temp = this.props.queue;
+
+    console.log(prevSong, prevSongName, prevArtistName, "##########");
+
+    for (var i = 0; i < this.props.queue.length; i++) {
+      console.log("inside");
+      if (this.props.queueSongName[i] === prevSongName) {
+        console.log("same same");
+        this.props.queue.splice(editIndex, 1);
+        this.props.queueSongName.splice(editIndex, 1);
+        this.props.artistName.splice(editIndex, 1);
+        this.props.queue.splice(i, 0, this.props.songs[editIndex].song);
+        this.props.queueSongName.splice(
+          i,
+          0,
+          this.props.songs[editIndex].song_name
+        );
+        this.props.artistName.splice(
+          i,
+          0,
+          this.props.songs[editIndex].artist_name
+        );
+        // this.props.queue.join();
+        // this.props.queueSongName.join();
+        // this.props.artistName.join();
+      }
+      this.props.queue.length--;
+      this.props.queueSongName.length--;
+      this.props.artistName.length--;
+    }
+
+    this.setState({ editSong: false });
+    this.setState({ modalOpen: true });
+    this.setState({ modalOpen: false });
+  };
+
   //adding the songs to a queue
   addToQueue = (e, index) => {
     e.stopPropagation();
@@ -101,6 +178,9 @@ class AlbumContent extends Component {
         );
         // console.log(this.props.queue);
       }
+      this.props.coverImage.push(
+        this.props.data[this.props.albumIndex].album_image
+      );
 
       if (this.props.queue.length > 0) {
         this.setState({ play: true });
@@ -121,6 +201,7 @@ class AlbumContent extends Component {
           this.props.data[index].songs[i].song_name
         );
         this.props.artistName.push(this.props.data[index].songs[i].artist_name);
+        this.props.coverImage.push(this.props.data[index].album_image);
       }
     }
     if (this.props.queue.length > 0) {
@@ -174,6 +255,38 @@ class AlbumContent extends Component {
               </div>
             </div>
           </Dialog>
+          <Dialog
+            open={this.state.editSong}
+            onClose={this.editClose}
+            className="form-dialog"
+          >
+            <div className="form">
+              <input
+                type="text"
+                id="song_name"
+                className="input"
+                placeholder="Song Name"
+                onChange={this.getName}
+              />{" "}
+              <br />
+              <input
+                type="text"
+                id="artist_name"
+                className="input"
+                placeholder="Artist Name"
+                onChange={this.getArtist}
+              />{" "}
+              <br />
+              <p> Upload the song</p>
+              <input type="file" accept="audio/*" onChange={this.addSong} />
+              <div className="button">
+                <button className="add-song-button" onClick={this.editComplete}>
+                  {" "}
+                  Add{" "}
+                </button>
+              </div>
+            </div>
+          </Dialog>
         </div>
         <div className="songs-list">
           {this.props.songs &&
@@ -196,6 +309,13 @@ class AlbumContent extends Component {
                     onClick={e => this.addToQueue(e, index)}
                   >
                     + queue{" "}
+                  </button>
+                  <button
+                    className="delete_song"
+                    onClick={e => this.editSong(e, index)}
+                  >
+                    {" "}
+                    Edit
                   </button>
                   {/* <audio controls={this.state.play}> <source src= {item.song} />> </audio> */}
                 </div>

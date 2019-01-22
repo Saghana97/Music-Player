@@ -34,7 +34,13 @@ class Album extends Component {
       currentSongList: [],
       playSongIndex: null,
       render: false,
-      currentSong: ""
+      currentSong: "",
+      loop: false,
+      cover_image: [],
+      editStatus: false,
+      editIndex: "",
+      previousAlbumName: "",
+      previousAlbumImage: ""
     };
   }
   //getting the details of the album
@@ -64,25 +70,61 @@ class Album extends Component {
   };
   //function to add the data to the album content
   addToData = () => {
-    if(this.state.album_text.length!=0 && this.state.album_image){
-    data.push({
-      album_name: this.state.album_text,
-      album_image: this.state.album_image,
-      songs: []
-    });
-    this.setState({album_text:"",album_image:""})
-    this.setState({ open: false });
-  }
-  else{
-    alert("cannot add");
-  }
+    if (this.state.album_text.length != 0 && this.state.album_image) {
+      data.push({
+        album_name: this.state.album_text,
+        album_image: this.state.album_image,
+        songs: []
+      });
+      this.setState({ album_text: "", album_image: "" });
+      this.setState({ open: false });
+    } else {
+      alert("cannot add");
+    }
   };
+
   //get the file and store it in a base 64 format
   getFile = e => {
     const file = e.target.files[0];
     getBase64(file).then(base64 => {
       this.setState({ album_image: base64 });
     });
+  };
+
+  addEditData = e => {
+    console.log("all data",this.state.data)
+    console.log(
+      "state before edit",
+      data[this.state.editIndex].album_image,
+      data[this.state.editIndex].album_name
+    );
+
+    this.setState({
+      previousAlbumName: data[this.state.editIndex].album_name,
+      previousAlbumImage: data[this.state.editIndex].album_image
+    });
+
+    if (this.state.album_text) {
+      data[this.state.editIndex].album_name = this.state.album_text;
+    }
+    if (this.state.album_image) {
+      data[this.state.editIndex].album_image = this.state.album_image;
+    }
+    this.setState({
+      album_text: "",
+      album_image: ""
+    });
+    var temp = this.state.cover_image;
+
+    for (var i = 0; i < temp.length; i++) {
+      if (this.state.previousAlbumImage === temp[i]) {
+        temp[i] = this.state.album_image;
+      }
+    }
+    this.setState({ cover_image: temp });
+    this.setState({ editStatus: false });
+
+    console.log("aftr  --all data",this.state.data)
   };
 
   componentWillReceiveProps() {
@@ -109,6 +151,31 @@ class Album extends Component {
       data: this.state.data
     });
   };
+
+  //function
+  editAlbum = (e, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log(index, "index");
+    this.setState({ editIndex: index });
+    this.setState({ editStatus: true });
+    //this.setState({ editIndex: index });
+  };
+
+  handleEditClose = () => {
+    this.setState({ editStatus: false });
+  };
+
+  clearQueue = () => {
+    this.setState({
+      playSongIndex: "",
+      currentSong: "",
+      queue: [],
+      queue_name: [],
+      artist_name: []
+    });
+  };
+
   songClick = (e, index) => {
     e.preventDefault();
     e.stopPropagation();
@@ -120,28 +187,36 @@ class Album extends Component {
   playNext = e => {
     e.stopPropagation();
     e.preventDefault();
-    let previousId = this.state.playSongIndex - 1;
-    this.setState({ playSongIndex: previousId });
-    this.setState({ currentSong: this.state.queue[previousId] });
+    let nextId = this.state.playSongIndex + 1;
+    if (nextId < this.state.queue.length) {
+      this.setState({ playSongIndex: nextId });
+      this.setState({ currentSong: this.state.queue[nextId] });
+    }
   };
 
   playPrevious = e => {
     e.stopPropagation();
     e.preventDefault();
-    let nextId = this.state.playSongIndex - 1;
-    this.setState({ playSongIndex: nextId });
-    this.setState({ currentSong: this.state.queue[nextId] });
+    let previousId = this.state.playSongIndex - 1;
+    if (previousId >= 0) {
+      this.setState({ playSongIndex: previousId });
+      this.setState({ currentSong: this.state.queue[previousId] });
+    }
   };
 
+  loopSong = e => {
+    this.setState({ loop: !this.state.loop });
+  };
   //add all the songs to the queue
   addAllToQueue = () => {
-    const { data, queue, queue_name, artist_name } = this.state;
+    const { data, queue, queue_name, artist_name, cover_image } = this.state;
     for (var i = 0; i < data.length; i++) {
       for (var j = 0; j < data[i].songs.length; j++) {
         if (data[i].songs[j].song) {
           queue.push(data[i].songs[j].song);
           queue_name.push(data[i].songs[j].song_name);
           artist_name.push(data[i].songs[j].artist_name);
+          cover_image.push(data[i].album_image);
         }
       }
     }
@@ -196,6 +271,41 @@ class Album extends Component {
               </div>
             </div>
           </Dialog>
+          <Dialog
+            open={this.state.editStatus}
+            onClose={this.handleEditClose}
+            className="form-dialog"
+          >
+            <div className="form">
+              <input
+                type="text"
+                id="album_name"
+                className="input"
+                placeholder="Album Name"
+                onChange={this.getName}
+              />{" "}
+              <br />
+              <p> Upload a cover image</p>
+              <input
+                type="file"
+                name="pic"
+                accept="image/*"
+                className="input-file"
+                onChange={this.getFile}
+                id="picture"
+              />
+              <div className="button">
+                <button
+                  className="add-album-button"
+                  onClick={e => this.addEditData(e)}
+                >
+                  {" "}
+                  Add{" "}
+                </button>
+              </div>
+            </div>
+          </Dialog>
+
           <div className="album-container">
             {this.state.data &&
               this.state.data.length > 0 &&
@@ -217,6 +327,10 @@ class Album extends Component {
                       {" "}
                       Delete{" "}
                     </button>
+                    <button onClick={e => this.editAlbum(e, index)}>
+                      {" "}
+                      Edit
+                    </button>
                   </div>
                 </div>
               ))}
@@ -233,6 +347,7 @@ class Album extends Component {
                   contentModal={this.state.modalOpen}
                   queueSongName={this.state.queue_name}
                   artistName={this.state.artist_name}
+                  coverImage={this.state.cover_image}
                 />
               </div>
             </Dialog>
@@ -240,7 +355,9 @@ class Album extends Component {
         </div>
         <div className="Queuediv">
           <p className="playListSongs"> Your Playlist </p>
+          <button onClick={this.clearQueue}> Clear Queue </button>
           {this.state.data &&
+            this.state.queue_name &&
             this.state.queue_name.map((song, index) => (
               <div
                 className="song-list"
@@ -258,15 +375,29 @@ class Album extends Component {
             ))}
         </div>
         <div className="audio-wrapper">
+          <img
+            src={this.state.cover_image[this.state.playSongIndex]}
+            alt=""
+            className="cover-image"
+          />
           <p>{this.state.queue_name[this.state.playSongIndex]}</p>
-          <i class="fas fa-backward" onClick={e => this.playPrevious(e)} />
+          <i
+            className={
+              this.state.loop ? "fas fa-retweet active" : "fas fa-retweet"
+            }
+            onClick={e => this.loopSong(e)}
+          />
+          <i className="fas fa-backward" onClick={e => this.playPrevious(e)} />
           <audio
             id="player"
             controls
             autoPlay
             preload="auto"
             key={this.state.currentSong}
-            src={this.state.currentSong}
+            src={
+              this.state.currentSong ? this.state.currentSong : this.state.queue
+            }
+            loop={this.state.loop}
           >
             <source id="source" />
           </audio>
